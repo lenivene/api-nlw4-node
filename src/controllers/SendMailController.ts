@@ -35,7 +35,8 @@ export class SendMailController{
     const surveys = surveysAlreadyExists;
 
     const surveysUserAlreadyExists = await surveysUserRepository.findOne({
-      where: [{user_id: user.id}, {value: null}]
+      where: [{user_id: user.id}, {value: null}],
+      relations: ["user", "surveys"]
     });
 
     const sendMail = async (email: string, subject: string) => {
@@ -52,6 +53,8 @@ export class SendMailController{
 
     if(surveysUserAlreadyExists){
       await sendMail(data.email, surveys.title);
+
+      return res.json(surveysUserAlreadyExists);
     }
 
     const surveysUser = surveysUserRepository.create({
