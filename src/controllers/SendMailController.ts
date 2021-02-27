@@ -39,20 +39,20 @@ export class SendMailController{
       relations: ["user", "surveys"]
     });
 
-    const sendMail = async (email: string, subject: string) => {
+    const sendMail = async (email: string, subject: string, surveysUserId: string) => {
       const mailData = {
         name: user.name,
         title: surveys.title,
         description: surveys.description,
         link: `${domainUrl}/answers`,
-        user_id: user.id
+        surveys_user_id: surveysUserId
       }
 
       await sendMailService.execute(email, subject, mailData, "no-reply.hbs");
     }
 
     if(surveysUserAlreadyExists){
-      await sendMail(data.email, surveys.title);
+      await sendMail(data.email, surveys.title, surveysUserAlreadyExists.id);
 
       return res.json(surveysUserAlreadyExists);
     }
@@ -60,11 +60,11 @@ export class SendMailController{
     const surveysUser = surveysUserRepository.create({
       user_id: userAlreadyExists.id,
       surveys_id: surveysAlreadyExists.id
-    })
+    });
 
     await surveysUserRepository.save(surveysUser);
 
-    await sendMail(data.email, surveys.title);
+    await sendMail(data.email, surveys.title, surveysUser.id);
 
     return res.json(surveysUser);
   }
