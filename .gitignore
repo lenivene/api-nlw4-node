@@ -118,5 +118,6 @@ dist
 
 # Database
 database.sqlite
+database.test.sqlite
 
 # End of https://www.toptal.com/developers/gitignore/api/node
