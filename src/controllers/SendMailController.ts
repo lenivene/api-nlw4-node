@@ -4,10 +4,12 @@ import { SurveysRepository } from "../repositories/SurveysRepository";
 import { UserRepository } from "../repositories/UserRepository";
 import { SurveysUserRepository } from "../repositories/SurveysUserRepository";
 import { sendMailService } from "../services/SendMailService";
+import { GetRequestDomain } from "../utils/GetRequestDomain";
 
 export class SendMailController{
   async execute(req: Request, res: Response){
     const data = req.body;
+    const domainUrl = GetRequestDomain(req);
 
     const userRepository = getCustomRepository(UserRepository);
     const surveysRepository = getCustomRepository(SurveysRepository);
@@ -29,6 +31,29 @@ export class SendMailController{
       })
     }
 
+    const user = userAlreadyExists;
+    const surveys = surveysAlreadyExists;
+
+    const surveysUserAlreadyExists = await surveysUserRepository.findOne({
+      where: [{user_id: user.id}, {value: null}]
+    });
+
+    const sendMail = async (email: string, subject: string) => {
+      const mailData = {
+        name: user.name,
+        title: surveys.title,
+        description: surveys.description,
+        link: `${domainUrl}/answers`,
+        user_id: user.id
+      }
+
+      await sendMailService.execute(email, subject, mailData, "no-reply.hbs");
+    }
+
+    if(surveysUserAlreadyExists){
+      await sendMail(data.email, surveys.title);
+    }
+
     const surveysUser = surveysUserRepository.create({
       user_id: userAlreadyExists.id,
       surveys_id: surveysAlreadyExists.id
@@ -36,16 +61,7 @@ export class SendMailController{
 
     await surveysUserRepository.save(surveysUser);
 
-    await sendMailService.execute(
-      data.email,
-      surveysAlreadyExists.title,
-      {
-        name: userAlreadyExists.name,
-        title: surveysAlreadyExists.title,
-        description: surveysAlreadyExists.description
-      },
-      "no-reply.hbs"
-    );
+    await sendMail(data.email, surveys.title);
 
     return res.json(surveysUser);
   }
