@@ -1,17 +1,14 @@
-import SuperTest, {Test} from "supertest";
+import request from "supertest";
 import { Connection } from "typeorm";
 import { app } from "../../app";
 import { createDatabaseConnection } from "../../database";
 
 describe("Surveys", () => {
   let database: Connection;
-  let server: SuperTest.SuperTest<Test>;
 
   beforeAll(async () => {
     database = await createDatabaseConnection();
     await database.runMigrations();
-
-    server = await SuperTest(app);
   });
 
   afterAll(() => {
@@ -24,7 +21,7 @@ describe("Surveys", () => {
       description: "Reprehenderit Lorem magna incididunt irure elit incididunt mollit tempor."
     };
 
-    const response = await server.post("/surveys").send(data);
+    const response = await request(app).post("/surveys").send(data);
 
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('title');
@@ -32,7 +29,7 @@ describe("Surveys", () => {
   });
 
   it("Should be able to show an array with multiples surveys", async () => {
-    const response = await server.get("/surveys");
+    const response = await request(app).get("/surveys").send();
 
     expect(response.status).toBe(200);
   })
